@@ -82,6 +82,9 @@ RUN set -eux \
   && apk del --purge .build_deps \
   && rm -rf /var/cache/apk/*
 
+#Install Bash
+RUN apk add --no-cache bash
+
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
@@ -89,8 +92,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 COPY ./php.ini ${PHP_INI_DIR}/conf.d/99-php.ini
 
 # Copy entrypoint
-COPY ./entrypoint /usr/local/bin/docker-entrypoint
-RUN chmod +x /usr/local/bin/docker-entrypoint
+#RUN chmod +x /usr/local/bin/docker-entrypoint
+#COPY docker-entrypoint /usr/local/bin/
+#RUN chmod +x /usr/local/bin/docker-entrypoint
+
+# Create and set up entrypoint
+RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint && \
+    echo 'set -e' >> /usr/local/bin/docker-entrypoint && \
+    echo 'if [ $# -gt 0 ]; then' >> /usr/local/bin/docker-entrypoint && \
+    echo '    exec "$@"' >> /usr/local/bin/docker-entrypoint && \
+    echo 'else' >> /usr/local/bin/docker-entrypoint && \
+    echo '    exec php-fpm' >> /usr/local/bin/docker-entrypoint && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint && \
+    chmod +x /usr/local/bin/docker-entrypoint
 
 # Workdir
 ENV WORKDIR=/var/www/app
@@ -101,4 +115,5 @@ WORKDIR ${WORKDIR}
 EXPOSE 9000
 
 # Run entrypoint
-CMD ["docker-entrypoint"]
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/docker-entrypoint"]
+CMD ["php-fpm"]

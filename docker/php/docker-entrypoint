@@ -1,8 +1,5 @@
 #!/bin/sh
-
 set -e
-
-# composer install -o --working-dir="$WORKDIR"
 
 # Run custom command if provided, otherwise start php-fpm
 if [ $# -gt 0 ]; then
